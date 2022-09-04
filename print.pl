@@ -29,7 +29,8 @@ sub printMap {
 	
 	$endx = 11;
 	$endy = 17;
-	check_line($startx,$starty,$endx,$endy);
+	
+	Bresenham($startx,$starty,$endx,$endy);
 	foreach my $y (0..($hei - 1)) {
 		foreach my $x (0..($wid - 1)) {
 			
@@ -47,13 +48,85 @@ sub printMap {
 	
 	my $png_data = $im->png;
 	
-	open IMG, ">:raw", "prob1.png";
+	open IMG, ">:raw", "Bresenham.png";
+	binmode IMG;
+	print IMG $png_data;
+	close IMG;
+	
+	mod_Bresenham($startx,$starty,$endx,$endy);
+	foreach my $y (0..($hei - 1)) {
+		foreach my $x (0..($wid - 1)) {
+			
+			if (($x == $startx && $y == $starty) || ($x == $endx && $y == $endy)) {
+				$im->setPixel($x,$y,$red);
+				
+			} elsif (exists $posline{$x} && exists $posline{$x}{$y}) {
+				$im->setPixel($x,$y,$black);
+				
+			} else {
+				$im->setPixel($x,$y,$white);
+			}
+		}
+	}
+	
+	my $png_data = $im->png;
+	
+	open IMG, ">:raw", "mod_Bresenham.png";
 	binmode IMG;
 	print IMG $png_data;
 	close IMG;
 }
 
-sub check_line {
+sub mod_Bresenham {
+	my ($startx,$starty,$endx,$endy) = @_;
+	
+	my $x = $startx;
+	my $y = $starty;
+	#Grid cells are 1.0 X 1.0.
+	my $diffX = $endx - $startx;
+	my $diffY = $endy - $starty;
+	my $stepX = $diffX < 0 ? -1 : 1;
+	my $stepY = $diffY < 0 ? -1 : 1;
+	
+	#Ray/Slope related maths.
+	#Straight distance to the first vertical grid boundary.
+	my $xOffset = $endx > $startx ?
+		($startx - $startx) :
+		($startx - $startx);
+	#Straight distance to the first horizontal grid boundary.
+	my $yOffset = $endy > $starty ?
+		($starty - $starty) :
+		($starty - $starty);
+		
+	#Angle of ray/slope.
+	my $angle = atan2(-$diffY, $diffX);
+	#NOTE: These can be divide by 0's, but JS just yields Infinity! :)
+	#How far to move along the ray to cross the first vertical grid cell boundary.
+	my $tMaxX = $xOffset / cos($angle);
+	#How far to move along the ray to cross the first horizontal grid cell boundary.
+	my $tMaxY = $yOffset / sin($angle);
+	#How far to move along the ray to move horizontally 1 grid cell.
+	my $tDeltaX = 1.0 / cos($angle);
+	#How far to move along the ray to move vertically 1 grid cell.
+	my $tDeltaY = 1.0 / sin($angle);
+	
+	#Travel one grid cell at a time.
+	my $manhattanDistance = abs($endx - $startx) +
+		abs($endy - $starty);
+	for (my $t = 0; $t <= $manhattanDistance; $t++) {
+		$posline{$x}{$y} = 1;
+		#Only move in either X or Y coordinates, not both.
+		if (abs($tMaxX) < abs($tMaxY)) {
+			$tMaxX += $tDeltaX;
+			$x += $stepX;
+		} else {
+			$tMaxY += $tDeltaY;
+			$y += $stepY;
+		}
+	}
+}
+
+sub Bresenham {
 	my ($X0, $Y0, $X1, $Y1) = @_;
 	
 	undef %posline;
