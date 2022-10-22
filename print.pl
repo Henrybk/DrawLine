@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 use Data::Dumper;
+use Time::HiRes qw(time);
 
 use File::Spec;
 use GD;
@@ -14,7 +15,9 @@ my $white = $im->colorAllocate(255,255,255);
 my $black = $im->colorAllocate(0,0,0);
 my $red = $im->colorAllocate(255,0,0);
 
-printMap();
+#printMap();
+
+bench();
 
 sub printMap {
 	my $startx;
@@ -22,19 +25,53 @@ sub printMap {
 	my $starty;
 	my $endy;
 	
-	my $plot;
-	
 	$startx = int rand $wid;
 	$starty = int rand $hei;
-	
 	$endx = int rand $wid;
 	$endy = int rand $hei;
 	
+	my $plot;
 	$plot = Bresenham($startx,$starty,$endx,$endy);
 	plot("kore_Bresenham.png", $startx, $starty, $endx, $endy, $plot);
 	
 	$plot = hercules_Bresenham($startx,$starty,$endx,$endy);
 	plot("hercules_Bresenham.png", $startx, $starty, $endx, $endy, $plot);
+}
+
+sub bench {
+	my $n = 100000;
+	
+	my @startx;
+	my @endx;
+	my @starty;
+	my @endy;
+	
+	for(my $i = 0; $i < $n; $i++){
+		$startx[$i] = int rand $wid;
+		$starty[$i] = int rand $hei;
+		$endx[$i] = int rand $wid;
+		$endy[$i] = int rand $hei;
+	}
+	
+	my $time_s;
+	my $time_e;
+	my $time_d;
+	
+	$time_s = time;
+	for(my $i = 0; $i < $n; $i++){
+		Bresenham($startx[$i],$starty[$i],$endx[$i],$endy[$i]);
+	}
+	$time_e = time;
+	$time_d = $time_e - $time_s;
+	print "Bresenham took $time_d\n";
+	
+	$time_s = time;
+	for(my $i = 0; $i < $n; $i++){
+		hercules_Bresenham($startx[$i],$starty[$i],$endx[$i],$endy[$i]);
+	}
+	$time_e = time;
+	$time_d = $time_e - $time_s;
+	print "hercules_Bresenham took $time_d\n";
 }
 
 sub plot {
