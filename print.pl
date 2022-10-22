@@ -11,24 +11,25 @@ my %posline;
 printMap();
 
 sub printMap {
-	my $wid = 20;
-	my $hei = 20;
+	my $wid = 15;
+	my $hei = 15;
 	my $im = new GD::Image($wid, $hei);
 	
 	my $white = $im->colorAllocate(255,255,255);
 	my $black = $im->colorAllocate(0,0,0);
 	my $red = $im->colorAllocate(255,0,0);
+	my $png_data;
 	
 	my $startx;
 	my $endx;
 	my $starty;
 	my $endy;
 	
-	$startx = 2;
-	$starty = 2;
+	$startx = int rand $wid;
+	$starty = int rand $hei;
 	
-	$endx = 11;
-	$endy = 17;
+	$endx = int rand $wid;
+	$endy = int rand $hei;
 	
 	Bresenham($startx,$starty,$endx,$endy);
 	foreach my $y (0..($hei - 1)) {
@@ -46,32 +47,9 @@ sub printMap {
 		}
 	}
 	
-	my $png_data = $im->png;
-	
-	open IMG, ">:raw", "kore_Bresenham.png";
-	binmode IMG;
-	print IMG $png_data;
-	close IMG;
-	
-	mod_Bresenham($startx,$starty,$endx,$endy);
-	foreach my $y (0..($hei - 1)) {
-		foreach my $x (0..($wid - 1)) {
-			
-			if (($x == $startx && $y == $starty) || ($x == $endx && $y == $endy)) {
-				$im->setPixel($x,$y,$red);
-				
-			} elsif (exists $posline{$x} && exists $posline{$x}{$y}) {
-				$im->setPixel($x,$y,$black);
-				
-			} else {
-				$im->setPixel($x,$y,$white);
-			}
-		}
-	}
-	
 	$png_data = $im->png;
 	
-	open IMG, ">:raw", "mod_Bresenham.png";
+	open IMG, ">:raw", "kore_Bresenham.png";
 	binmode IMG;
 	print IMG $png_data;
 	close IMG;
