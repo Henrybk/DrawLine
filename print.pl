@@ -48,7 +48,7 @@ sub printMap {
 	
 	my $png_data = $im->png;
 	
-	open IMG, ">:raw", "Bresenham.png";
+	open IMG, ">:raw", "kore_Bresenham.png";
 	binmode IMG;
 	print IMG $png_data;
 	close IMG;
@@ -69,9 +69,32 @@ sub printMap {
 		}
 	}
 	
-	my $png_data = $im->png;
+	$png_data = $im->png;
 	
 	open IMG, ">:raw", "mod_Bresenham.png";
+	binmode IMG;
+	print IMG $png_data;
+	close IMG;
+	
+	hercules_Bresenham($startx,$starty,$endx,$endy);
+	foreach my $y (0..($hei - 1)) {
+		foreach my $x (0..($wid - 1)) {
+			
+			if (($x == $startx && $y == $starty) || ($x == $endx && $y == $endy)) {
+				$im->setPixel($x,$y,$red);
+				
+			} elsif (exists $posline{$x} && exists $posline{$x}{$y}) {
+				$im->setPixel($x,$y,$black);
+				
+			} else {
+				$im->setPixel($x,$y,$white);
+			}
+		}
+	}
+	
+	$png_data = $im->png;
+	
+	open IMG, ">:raw", "hercules_Bresenham.png";
 	binmode IMG;
 	print IMG $png_data;
 	close IMG;
@@ -79,6 +102,8 @@ sub printMap {
 
 sub mod_Bresenham {
 	my ($startx,$starty,$endx,$endy) = @_;
+	
+	undef %posline;
 	
 	my $x = $startx;
 	my $y = $starty;
@@ -198,6 +223,65 @@ sub Bresenham {
 		}
 	}
 }
+sub hercules_Bresenham {
+	my ($start_x, $start_y, $end_x, $end_y) = @_;
+	
+	undef %posline;
+	
+	my $dx;
+	my $dy;
+	my $wx = 0;
+	my $wy = 0;
+	my $weight;
 
+	$dx = ($end_x - $start_x);
+	if ($dx < 0) {
+		($start_x, $end_x) = ($end_x, $start_x);
+		($start_y, $end_y) = ($end_y, $start_y);
+		$dx = -$dx;
+	}
+	$dy = ($end_y - $start_y);
+
+	my $spd;
+	$spd->{rx} = 0;
+	$spd->{ry} = 0;
+	$spd->{len} = 1;
+	$spd->{x}[0] = $start_x;
+	$spd->{y}[0] = $start_y;
+
+	if ($dx > abs($dy)) {
+		$weight = $dx;
+		$spd->{ry} = 1;
+	} else {
+		$weight = abs($end_y - $start_y);
+		$spd->{rx} = 1;
+	}
+
+	while ($start_x != $end_x || $start_y != $end_y)
+	{
+		$wx += $dx;
+		$wy += $dy;
+		if ($wx >= $weight) {
+			$wx -= $weight;
+			$start_x++;
+		}
+		if ($wy >= $weight) {
+			$wy -= $weight;
+			$start_y++;
+		} elsif ($wy < 0) {
+			$wy += $weight;
+			$start_y--;
+		}
+		if( $spd->{len} < 32 )
+		{
+			$spd->{x}[$spd->{len}] = $start_x;
+			$spd->{y}[$spd->{len}] = $start_y;
+			$spd->{len}++;
+		}
+		$posline{$start_x}{$start_y} = 1;
+	}
+
+	return 1;
+}
 
 1;
