@@ -6,24 +6,23 @@ use Data::Dumper;
 use File::Spec;
 use GD;
 
-my %posline;
+my $wid = 15;
+my $hei = 15;
+my $im = new GD::Image($wid, $hei);
+	
+my $white = $im->colorAllocate(255,255,255);
+my $black = $im->colorAllocate(0,0,0);
+my $red = $im->colorAllocate(255,0,0);
 
 printMap();
 
 sub printMap {
-	my $wid = 15;
-	my $hei = 15;
-	my $im = new GD::Image($wid, $hei);
-	
-	my $white = $im->colorAllocate(255,255,255);
-	my $black = $im->colorAllocate(0,0,0);
-	my $red = $im->colorAllocate(255,0,0);
-	my $png_data;
-	
 	my $startx;
 	my $endx;
 	my $starty;
 	my $endy;
+	
+	my $plot;
 	
 	$startx = int rand $wid;
 	$starty = int rand $hei;
@@ -31,109 +30,41 @@ sub printMap {
 	$endx = int rand $wid;
 	$endy = int rand $hei;
 	
-	Bresenham($startx,$starty,$endx,$endy);
-	foreach my $y (0..($hei - 1)) {
-		foreach my $x (0..($wid - 1)) {
-			
-			if (($x == $startx && $y == $starty) || ($x == $endx && $y == $endy)) {
-				$im->setPixel($x,$y,$red);
-				
-			} elsif (exists $posline{$x} && exists $posline{$x}{$y}) {
-				$im->setPixel($x,$y,$black);
-				
-			} else {
-				$im->setPixel($x,$y,$white);
-			}
-		}
-	}
+	$plot = Bresenham($startx,$starty,$endx,$endy);
+	plot("kore_Bresenham.png", $startx, $starty, $endx, $endy, $plot);
 	
-	$png_data = $im->png;
-	
-	open IMG, ">:raw", "kore_Bresenham.png";
-	binmode IMG;
-	print IMG $png_data;
-	close IMG;
-	
-	hercules_Bresenham($startx,$starty,$endx,$endy);
-	foreach my $y (0..($hei - 1)) {
-		foreach my $x (0..($wid - 1)) {
-			
-			if (($x == $startx && $y == $starty) || ($x == $endx && $y == $endy)) {
-				$im->setPixel($x,$y,$red);
-				
-			} elsif (exists $posline{$x} && exists $posline{$x}{$y}) {
-				$im->setPixel($x,$y,$black);
-				
-			} else {
-				$im->setPixel($x,$y,$white);
-			}
-		}
-	}
-	
-	$png_data = $im->png;
-	
-	open IMG, ">:raw", "hercules_Bresenham.png";
-	binmode IMG;
-	print IMG $png_data;
-	close IMG;
+	$plot = hercules_Bresenham($startx,$starty,$endx,$endy);
+	plot("hercules_Bresenham.png", $startx, $starty, $endx, $endy, $plot);
 }
 
-sub mod_Bresenham {
-	my ($startx,$starty,$endx,$endy) = @_;
-	
-	undef %posline;
-	
-	my $x = $startx;
-	my $y = $starty;
-	#Grid cells are 1.0 X 1.0.
-	my $diffX = $endx - $startx;
-	my $diffY = $endy - $starty;
-	my $stepX = $diffX < 0 ? -1 : 1;
-	my $stepY = $diffY < 0 ? -1 : 1;
-	
-	#Ray/Slope related maths.
-	#Straight distance to the first vertical grid boundary.
-	my $xOffset = $endx > $startx ?
-		($startx - $startx) :
-		($startx - $startx);
-	#Straight distance to the first horizontal grid boundary.
-	my $yOffset = $endy > $starty ?
-		($starty - $starty) :
-		($starty - $starty);
-		
-	#Angle of ray/slope.
-	my $angle = atan2(-$diffY, $diffX);
-	#NOTE: These can be divide by 0's, but JS just yields Infinity! :)
-	#How far to move along the ray to cross the first vertical grid cell boundary.
-	my $tMaxX = $xOffset / cos($angle);
-	#How far to move along the ray to cross the first horizontal grid cell boundary.
-	my $tMaxY = $yOffset / sin($angle);
-	#How far to move along the ray to move horizontally 1 grid cell.
-	my $tDeltaX = 1.0 / cos($angle);
-	#How far to move along the ray to move vertically 1 grid cell.
-	my $tDeltaY = 1.0 / sin($angle);
-	
-	#Travel one grid cell at a time.
-	my $manhattanDistance = abs($endx - $startx) +
-		abs($endy - $starty);
-	for (my $t = 0; $t <= $manhattanDistance; $t++) {
-		$posline{$x}{$y} = 1;
-		#Only move in either X or Y coordinates, not both.
-		if (abs($tMaxX) < abs($tMaxY)) {
-			$tMaxX += $tDeltaX;
-			$x += $stepX;
-		} else {
-			$tMaxY += $tDeltaY;
-			$y += $stepY;
+sub plot {
+	my ($name, $startx, $starty, $endx, $endy, $plot) = @_;
+	foreach my $y (0..($hei - 1)) {
+		foreach my $x (0..($wid - 1)) {
+			
+			if (($x == $startx && $y == $starty) || ($x == $endx && $y == $endy)) {
+				$im->setPixel($x,$y,$red);
+				
+			} elsif (exists $plot->{$x} && exists $plot->{$x}{$y}) {
+				$im->setPixel($x,$y,$black);
+				
+			} else {
+				$im->setPixel($x,$y,$white);
+			}
 		}
 	}
+	my $png_data = $im->png;
+	
+	open IMG, ">:raw", $name;
+	binmode IMG;
+	print IMG $png_data;
+	close IMG;
 }
 
 sub Bresenham {
 	my ($X0, $Y0, $X1, $Y1) = @_;
 	
-	undef %posline;
-
+	my %posline;
 
 	my $steep;
 	my $posX = 1;
@@ -200,11 +131,13 @@ sub Bresenham {
 			$E -= 1;
 		}
 	}
+	
+	return \%posline;
 }
 sub hercules_Bresenham {
 	my ($start_x, $start_y, $end_x, $end_y) = @_;
 	
-	undef %posline;
+	my %posline;
 	
 	my $dx;
 	my $dy;
@@ -259,7 +192,7 @@ sub hercules_Bresenham {
 		$posline{$start_x}{$start_y} = 1;
 	}
 
-	return 1;
+	return \%posline;
 }
 
 1;
