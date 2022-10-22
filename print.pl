@@ -15,9 +15,9 @@ my $white = $im->colorAllocate(255,255,255);
 my $black = $im->colorAllocate(0,0,0);
 my $red = $im->colorAllocate(255,0,0);
 
-#printMap();
+printMap();
 
-bench();
+#bench();
 
 sub printMap {
 	my $startx;
@@ -171,6 +171,7 @@ sub Bresenham {
 	
 	return \%posline;
 }
+
 sub hercules_Bresenham {
 	my ($start_x, $start_y, $end_x, $end_y) = @_;
 	
@@ -184,29 +185,18 @@ sub hercules_Bresenham {
 
 	$dx = ($end_x - $start_x);
 	if ($dx < 0) {
-		($start_x, $end_x) = ($end_x, $start_x);
-		($start_y, $end_y) = ($end_y, $start_y);
-		$dx = -$dx;
+		($start_x, $end_x, $start_y, $end_y) = ($end_x, $start_x, $end_y, $start_y);
+		$dx *= -1;
 	}
 	$dy = ($end_y - $start_y);
 
-	my $spd;
-	$spd->{rx} = 0;
-	$spd->{ry} = 0;
-	$spd->{len} = 1;
-	$spd->{x}[0] = $start_x;
-	$spd->{y}[0] = $start_y;
-
 	if ($dx > abs($dy)) {
 		$weight = $dx;
-		$spd->{ry} = 1;
 	} else {
 		$weight = abs($end_y - $start_y);
-		$spd->{rx} = 1;
 	}
 
-	while ($start_x != $end_x || $start_y != $end_y)
-	{
+	while ($start_x != $end_x || $start_y != $end_y) {
 		$wx += $dx;
 		$wy += $dy;
 		if ($wx >= $weight) {
@@ -219,12 +209,6 @@ sub hercules_Bresenham {
 		} elsif ($wy < 0) {
 			$wy += $weight;
 			$start_y--;
-		}
-		if( $spd->{len} < 32 )
-		{
-			$spd->{x}[$spd->{len}] = $start_x;
-			$spd->{y}[$spd->{len}] = $start_y;
-			$spd->{len}++;
 		}
 		$posline{$start_x}{$start_y} = 1;
 	}
